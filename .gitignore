@@ -1,0 +1,4 @@
+build/*
+dist/*
+launchkeydemo.egg-info/*
+webdemo/data.sq3

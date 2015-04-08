@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <title>LaunchKey Python SDK - Web Example</title>
+    <!-- Use jQuery to make this cross browser compatible Ajax calls -->
+    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+    <!-- Here's the code to check the status to reload the page when status changes and show the spinner while waiting -->
+    <script type="text/javascript">
+        var spinner = ['|', '/', "-", '\\'],
+                times = 0,
+                currentStatusCode = 403, // Default to unauthorized
+                checkStatus = function () {
+                    $.ajax({
+                        method: "POST",
+                        complete: function (jqXHR) {
+                            var status = jqXHR.status;
+                            if (status != currentStatusCode) { // If the status has changed, reload the page
+                                window.location = window.location.href;
+                            } else {
+                                if (status == 401) { // If we are in progress, keep the spinner spinning
+                                    $("#spinner").html(spinner[times++ %  4]);
+                                }
+                                setTimeout(checkStatus, 500); // Check the status every half second
+                            }
+                        }
+                    })
+                };
+
+        {{#authorized}}
+        currentStatusCode = 200;
+        {{/authorized}}
+        {{#authorizing}}
+        currentStatusCode = 401;
+        {{/authorizing}}
+    </script>
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,700,100,100italic">
+    <style>
+        body {
+            font-family: Roboto;
+            margin: 1em;
+        }
+        .error {
+            background-color: red;
+            color: #dddddd;
+            font-weight: 700;
+            font-size: 1.5em;
+            padding: 1em;
+            margin: 1em
+        }
+    </style>
+</head>
+<body>
+<div>
+    <h1>LaunchKey Python SDK - Web Example</h1>
+    <p>This is an example of utilizing the LaunchKey Python SDK in a web application with server side event callbacks</p>
+</div>
+<div>
+    {{#authorized}}
+    <h2>Logged in</h2>
+    <p>You are now orbited with LaunchKey. If you refresh the orbit screen on your mobile devices, you should be
+        able to see that you are currently orbited for your application and how long you have been orbited.</p>
+    <p>You can de-orbit in one of two ways:</p>
+    <ul>
+        <li>
+            <h4>Mobile device</h4>
+            <p>
+                De-orbit from your mobile device and the page will update shortly after.  If the web page does
+                not update, make sure you have your reverse proxy working correctly.  See the README.md for
+                details on the reverse proxy setup.
+            </p>
+        </li>
+        <li>
+            <h4>Web page</h4>
+            <p>
+                Click the "De-Orbit" button and your mobile device will ber updated.
+                You may have to refresh your devices orbit screen if you do not immediately see the change.
+            </p>
+        </li>
+    </ul>
+    <form method="POST">
+        <div>
+            <input id="deorbit" name="deorbit" type="hidden" value="deorbit">
+            <button type="submit">De-Orbit</button>
+        </div>
+    </form>
+    {{/authorized}}
+
+    {{#authorizing}}
+    <h2>Launching <span id="spinner"></span></h2>
+    <p>
+        Check your device for an launch request from your application.  If you don't see a request, try
+        refreshing the orbit screen on your mobile device.  Launch to authorize or cancel to deny the request.
+    </p>
+    <p>
+        Shortly after you respond the the launch request, you should see the web pag update. If the web page does
+        not update, make sure you have your reverse proxy working correctly.  See the README.md for
+        details on the reverse proxy setup.
+    </p>
+    {{/authorizing}}
+
+    {{#unauthorized}}
+    <h2>Log In</h2>
+    <p>Please enter a username in the field and press "Launch" to perform a launch request in via LaunchKey</p>
+    <form method="POST">
+        <div>
+            <label for="username">Username: </label>
+            <input id="username" name="username">
+            <button type="submit">Launch</button>
+        </div>
+    </form>
+    {{/unauthorized}}
+</div>
+</div>
+{{#error}}
+<div class="error">
+    An error occurred: {{.}}
+</div>
+{{/error}}
+
+{{^unauthorized}}
+<script type="text/javascript">
+    $(window).load(function () {
+        checkStatus();
+    });
+</script>
+{{/unauthorized}}
+</body>
+</html>
