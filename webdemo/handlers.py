@@ -13,11 +13,6 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
 
-        db_file = resource_filename(__name__, 'data.sq3')
-        logging.info('Using SQLite DB file %s' % (db_file))
-        self.sqlite = sqlite3.connect(db_file)
-        self.sqlite.execute('CREATE TABLE IF NOT EXISTS auth(request UNIQUE, status INT, timestamp INT, userhash)')
-
         args = sys.argv[1:]
         app_key = args[0]
         secret_key = args[1]
@@ -100,8 +95,7 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
                 (2 if authorized else 0, query.get('user_hash').pop(), auth_request)
             )
             self.sqlite.commit()
-            self.send_response(302)
-            self.send_header("location", "/")
+            self.send_response(200)
             self.end_headers()
             return
         elif query.has_key('deorbit') and query.has_key('signature'):
@@ -130,7 +124,7 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
             return
 
     def __serve_favicon(self):
-        filename = os.path.join(os.path.dirname(__file__), 'favicon.ico')
+        filename = resource_filename(__name__, '../static/favicon.ico')
 
         self.send_response(200)
         self.send_header('Content-Type', 'image/x-icon')

@@ -49,7 +49,8 @@ setup(
     include_package_data=True,
 
     data_files=[
-        ('templates', ['templates/template.html'])
+        ('templates', ['templates/template.html']),
+        ('static', ['static/favicon.ico'])
     ],
 
     entry_points={
