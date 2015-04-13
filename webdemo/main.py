@@ -28,7 +28,6 @@ def main():
     :param argv:
     :return:
     '''
-    # db_file = resource_filename(__name__, 'data.sq3')
     db_file = ':memory:'
     LaunchKeyHandler.sqlite = sqlite3.connect(db_file)
     LaunchKeyHandler.sqlite.execute('CREATE TABLE IF NOT EXISTS auth(request UNIQUE, status INT, timestamp INT, userhash)')
