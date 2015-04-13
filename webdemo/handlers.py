@@ -1,36 +1,14 @@
+import socket
+
 __author__ = 'adam'
 
 from BaseHTTPServer import BaseHTTPRequestHandler
 
 
-import os, sys, urlparse, pystache, sqlite3, cgi, time, logging
-from launchkey import API
+import os, urlparse, pystache, cgi, time
 from pkg_resources import resource_filename
 
-class LaunchKeyHandler(BaseHTTPRequestHandler):
-    sqlite = None
-    launchkey = None
-
-    def __init__(self, request, client_address, server):
-
-        args = sys.argv[1:]
-        app_key = args[0]
-        secret_key = args[1]
-        private_key_location = args[2]
-        private_key = file(private_key_location).read()
-        self.launchkey = API(app_key, secret_key, private_key)
-        BaseHTTPRequestHandler.__init__(self, request, client_address, server)
-
-    def __get_status(self, auth_request):
-        status = 0
-        if auth_request is not None and not auth_request == '':
-            c = self.sqlite.cursor()
-            c.execute('SELECT status FROM auth WHERE request = ? LIMIT 1', (auth_request,));
-            row = c.fetchone()
-            if row:
-                (status,) = row
-            c.close()
-        return status
+class LaunchKeyHandler(BaseHTTPRequestHandler, object):
 
     def do_GET(self):
         parsed_path = urlparse.urlparse(self.path)
@@ -53,6 +31,7 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
         self.send_header("Set-Cookie", "AuthRequest=%s" % (auth_request if auth_request is not None else ''))
         self.end_headers()
         self.wfile.write(page)
+        self.close_connection = 1
 
     def do_POST(self):
         parsed_path = urlparse.urlparse(self.path)
@@ -76,8 +55,7 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
             self.send_response(302)
             self.send_header("Set-Cookie", "AuthRequest=%s" % (auth_request))
             self.send_header("location", "/")
-            self.end_headers()
-            return
+
         elif form.has_key('deorbit'):
             if auth_request:
                 self.launchkey.logout(auth_request)
@@ -85,8 +63,7 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
                 self.sqlite.commit()
             self.send_response(302)
             self.send_header("location", "/")
-            self.end_headers()
-            return
+
         elif query.has_key('auth') and query.has_key('auth_request') and query.has_key('user_hash'):
             auth_request = query.get('auth_request').pop()
             authorized = self.launchkey.is_authorized(auth_request, query.get('auth').pop())
@@ -96,8 +73,7 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
             )
             self.sqlite.commit()
             self.send_response(200)
-            self.end_headers()
-            return
+
         elif query.has_key('deorbit') and query.has_key('signature'):
             user_hash = self.launchkey.deorbit(query.get('deorbit').pop(), query.get('signature').pop())
             if user_hash:
@@ -108,8 +84,7 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
                 code = 400
 
             self.send_response(code)
-            self.end_headers()
-            return
+
         else:
             status = self.__get_status(auth_request)
             if status == 2:
@@ -120,8 +95,9 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
                 code = 403
 
             self.send_response(code)
-            self.end_headers()
-            return
+
+        self.end_headers()
+        return
 
     def __serve_favicon(self):
         filename = resource_filename(__name__, '../static/favicon.ico')
@@ -139,6 +115,17 @@ class LaunchKeyHandler(BaseHTTPRequestHandler):
             else:
                 icofile.close()
                 return
+
+    def __get_status(self, auth_request):
+        status = 0
+        if auth_request is not None and not auth_request == '':
+            c = self.sqlite.cursor()
+            c.execute('SELECT status FROM auth WHERE request = ? LIMIT 1', (auth_request,));
+            row = c.fetchone()
+            if row:
+                (status,) = row
+            c.close()
+        return status
 
     def __get_auth_request_cookie(self):
         cookie_string = self.headers.getheader('Cookie')
