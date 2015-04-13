@@ -124,6 +124,13 @@ application configuration.
 5. __Winning!__ - You should be ready to try the demo and see how the Python SDK can be used to quickly and easily secure
 your application with LaunchKey.
 
+__NOTE:__ You will see numerous 401 log entries when logging in and a 403 or two when remote de-orbit occurs.  This is
+expected as the javascript from the front end will poll for the status of the request.  The following are the expected
+codes for the expected status:
+
+* 200 - Authenticated
+* 401 - Authenticating
+* 403 - De-Orbited
 
 <a name="support"></a>
 # Support
