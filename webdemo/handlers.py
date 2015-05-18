@@ -78,8 +78,18 @@ class LaunchKeyHandler(BaseHTTPRequestHandler, object):
             user_hash = self.launchkey.deorbit(query.get('deorbit').pop(), query.get('signature').pop())
             if user_hash:
                 code = 200
-                self.sqlite.execute('DELETE FROM auth WHERE userhash = ?', (user_hash,))
-                self.sqlite.commit()
+                c = self.sqlite.cursor()
+                c.execute('SELECT request FROM auth WHERE userhash = ?', (user_hash,))
+                for row in c.fetchall():
+                    try:
+                        request = row[0]
+                        self.sqlite.execute('DELETE FROM auth WHERE request = ?', (request,))
+                        self.sqlite.commit()
+                        self.launchkey.logout(request)
+                    except:
+                        pass
+
+
             else:
                 code = 400
 

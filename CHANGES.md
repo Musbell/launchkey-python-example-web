@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK Web Example
 ==============================================
 
+1.1.1
+-----
+
+Bug fix - Add logout to server side deorbit handling
+
 1.1.0
 -----
 
